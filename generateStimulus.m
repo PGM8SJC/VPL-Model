@@ -1,16 +1,20 @@
-function [dotsPosition,motionVectors] = generateStimulus()
+function [Stimulus] = generateStimulus()
 
-ScreenSize      = [500,500];    % pixels    
-dotSize         = [1];          % pixels
-dotDensity      = [0.01];       % number of dots per pixel^2
-speed           = [100];          % pixel/sec
-direction       = [pi];          % radian
-apertureDiam    = [100];
-apertureLoc     = [350,150];
-coherence       = [1];          % portion of dots moving together
-lifeTime        = [500];        % ms
-duration        = [500];        % ms
-framerate        = 60;
+% load stimulus parameters
+load ./StimulusParam.mat;
+
+screenSize = M.screenSize;
+dotSize = M.dotSize;
+dotDensity = M.dotDensity;
+speed = M.speed;
+direction = M.direction;
+apertureDiam = M.apertureDiam;
+apertureLoc = M.apertureLoc;
+coherence = M.coherence;
+lifeTime = M.lifeTime;
+duration = M.duration;
+framerate = M.framerate;
+
 
 numDots = floor(apertureDiam * apertureDiam * dotDensity); % assuming that the aperture is square
 
@@ -62,17 +66,20 @@ end
 % show the simulated stimulus
 % for i = 1:numFramesNeeded
 % %     figure;
-%     I = zeros(500,500);
+%     I = zeros(screenSize(1),screenSize(1));
 %     idx = sub2ind(size(I), [squeeze(dotsPosition(1,:,i))], [squeeze(dotsPosition(2,:,i))]);
 %     I(idx) = 1;
 %     figure(1);imagesc(I);colormap(gray);pause(1/framerate)
 % end
 
 for i = 1:numFramesNeeded
-    figure(1);imagesc(zeros(500,500));colormap(gray);hold on;
+    figure(1);imagesc(zeros(screenSize(1),screenSize(1)));colormap(gray);hold on;
     figure(1);quiver(squeeze(dotsPosition(1,:,i)),squeeze(dotsPosition(2,:,i)),motionVectors(1,:,i) .* cos(motionVectors(2,:,i)),motionVectors(1,:,i) .* sin(motionVectors(2,:,i)),'Color','k');
     pause(1/framerate)
 end
+
+Stimulus.dotsPosition = dotsPosition;
+Stimulus.motionVectors = motionVectors;
 
 
 end
