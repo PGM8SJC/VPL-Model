@@ -1,4 +1,13 @@
-function estimateMotionField(Stimulus)
+function MotionField = estimateMotionField(Stimulus)
+
+% To calculate the motion vector on each grid point:
+% - All the dots inside each grid point are extracted from the stimulus
+% - All the dots are embedded from all the stimulus frames
+% - The velocity vectors are averaged.
+% - The same process is repeated for all the points on the grid of motion
+% field.
+% - The motion vector from different frames could be dealt with
+% differently! 
 
 load ./StimulusParam.mat;
 
@@ -9,35 +18,36 @@ motionFieldSize = floor(screenSize .* motionFieldResRatio);
 dotsPosition = Stimulus.dotsPosition;
 motionVectors = Stimulus.motionVectors;
 
-k = 0;
 for i = 1:motionFieldSize(1)
     for j = 1:motionFieldSize(2)
-        k = k + 1;
         lowLimitX = (i - 1) * (1/motionFieldResRatio) + 1;
         upLimitX = (i) * (1/motionFieldResRatio);
-        motionFieldSizeLim(1,k) = lowLimitX;
-        motionFieldSizeLim(2,k) = upLimitX;
-        
+
         lowLimitY = (j - 1) * (1/motionFieldResRatio) + 1;
         upLimitY = (j) * (1/motionFieldResRatio);
-        motionFieldSizeLim(3,k) = lowLimitY;
-        motionFieldSizeLim(4,k) = upLimitY;
-        
-        whichDotsInsideX = dotsPosition(1,:,:) >= lowLimitX & dotsPosition(1,:,:) & ...
+
+        whichDotsInsideX = dotsPosition(1,:,:) >= lowLimitX & dotsPosition(1,:,:) <= upLimitX & ...
             dotsPosition(2,:,:) >= lowLimitY & dotsPosition(2,:,:) <= upLimitY;
         whichDotsInsideY = whichDotsInsideX;
         whichDotsInside = cat(1,whichDotsInsideX,whichDotsInsideY);
         
+        
         allMotionVectorsInside = motionVectors(whichDotsInside);
         if isempty(allMotionVectorsInside)
-            MotionField(i,j,1) = 0;
-            MotionField(i,j,2) = 0;
+            averageMotionInsideAmp(i,j) = 0;
+            averageMotionInsideAngle(i,j) = 0;
         else
+            allMotionVectorsInsideTwoRows = reshape(allMotionVectorsInside,2,length(allMotionVectorsInside)./2);
+            averageMotionInsideX = sum(allMotionVectorsInsideTwoRows(1,:) .* cos(allMotionVectorsInsideTwoRows(2,:)));
+            averageMotionInsideY = sum(allMotionVectorsInsideTwoRows(1,:) .* sin(allMotionVectorsInsideTwoRows(2,:)));
+            averageMotionInsideAmp(i,j) = sqrt(averageMotionInsideX^2 + averageMotionInsideY^2)./(length(allMotionVectorsInside)./2);
+            averageMotionInsideAngle(i,j) = atan(averageMotionInsideY./averageMotionInsideX);
         end
         
-        
+       
     end
 end
 
-
+MotionField.averageMotionInsideAmp = averageMotionInsideAmp;
+MotionField.averageMotionInsideAngle = averageMotionInsideAngle;
 end
