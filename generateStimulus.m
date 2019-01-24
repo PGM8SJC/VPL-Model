@@ -23,6 +23,12 @@ initialLife = rand(1,numDots) * lifeTime;
 initialMotionVector = repmat([speed;direction],1,numDots);
 numFramesNeeded = floor(duration * framerate / 1000);
 
+signalDotsIdx = rand(1,numDots) < coherence;
+noiseDotsIdx = ~signalDotsIdx;
+
+% Translational Motion
+noiseDirection = rand(1,numDots) * 2*pi;
+
 for framecount = 1:numFramesNeeded
     
     % move the dots 
@@ -31,10 +37,16 @@ for framecount = 1:numFramesNeeded
         dotsLife = initialLife;
         motionVectors = initialMotionVector;
     else
-        dotsPosition(1,:,framecount) = floor(dotsPosition(1,:,framecount-1) + (1/framerate) * speed * cos(direction));
-        dotsPosition(2,:,framecount) = floor(dotsPosition(2,:,framecount-1) + (1/framerate) * speed * sin(direction));
+        dotsPosition(1,signalDotsIdx,framecount) = floor(dotsPosition(1,signalDotsIdx,framecount-1) + (1/framerate) * speed * cos(direction));
+        dotsPosition(2,signalDotsIdx,framecount) = floor(dotsPosition(2,signalDotsIdx,framecount-1) + (1/framerate) * speed * sin(direction));
+        
+        dotsPosition(1,noiseDotsIdx,framecount) = floor(dotsPosition(1,noiseDotsIdx,framecount-1) + (1/framerate) * speed * cos(noiseDirection(noiseDotsIdx)));
+        dotsPosition(2,noiseDotsIdx,framecount) = floor(dotsPosition(2,noiseDotsIdx,framecount-1) + (1/framerate) * speed * sin(noiseDirection(noiseDotsIdx)));
+        
         dotsLife = dotsLife + (1/framerate) * 1000;
-        motionVectors(:,:,framecount) = repmat([speed;direction],1,numDots);
+        motionVectors(1,:,framecount) = repmat(speed,1,numDots);
+        motionVectors(2,signalDotsIdx,framecount) = repmat(direction,1,sum(signalDotsIdx));
+        motionVectors(2,noiseDotsIdx,framecount) = noiseDirection(noiseDotsIdx);
     end
     
     % relocate the dead dots
@@ -63,6 +75,10 @@ for framecount = 1:numFramesNeeded
     
 end
 
+
+% Complex Motion
+
+
 % show the simulated stimulus
 % for i = 1:numFramesNeeded
 % %     figure;
@@ -74,7 +90,7 @@ end
 
 for i = 1:numFramesNeeded
     figure(1);imagesc(zeros(screenSize(1),screenSize(1)));colormap(gray);hold on;
-    figure(1);quiver(squeeze(dotsPosition(1,:,i)),squeeze(dotsPosition(2,:,i)),motionVectors(1,:,i) .* cos(motionVectors(2,:,i)),motionVectors(1,:,i) .* sin(motionVectors(2,:,i)),'Color','k');
+    figure(1);quiver(squeeze(dotsPosition(2,:,i)),squeeze(dotsPosition(1,:,i)),motionVectors(1,:,i) .* sin(motionVectors(2,:,i)),motionVectors(1,:,i) .* cos(motionVectors(2,:,i)),'Color','k');
     pause(1/framerate)
 end
 
