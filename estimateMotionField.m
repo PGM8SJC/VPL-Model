@@ -47,7 +47,8 @@ for i = 1:motionFieldSize(1)
        
     end
 end
-
+figure;imagesc(zeros(motionFieldSize(2),motionFieldSize(1)));colormap(gray);hold on;
+quiver(1:motionFieldSize(2),1:motionFieldSize(1),averageMotionInsideAmp .* sin(averageMotionInsideAngle),averageMotionInsideAmp .* cos(averageMotionInsideAngle),'k');
 MotionField.averageMotionInsideAmp = averageMotionInsideAmp;
 MotionField.averageMotionInsideAngle = averageMotionInsideAngle;
 end
