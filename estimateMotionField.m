@@ -13,7 +13,7 @@ load ./StimulusParam.mat;
 
 screenSize = M.screenSize;
 
-motionFieldResRatio = 1/5; % ratio to the screen size e.g. motionFieldResRatio = 1/5 means that every 5 pixels will have one motion vector
+motionFieldResRatio = 1/10; % ratio to the screen size e.g. motionFieldResRatio = 1/5 means that every 5 pixels will have one motion vector
 motionFieldSize = floor(screenSize .* motionFieldResRatio);
 dotsPosition = Stimulus.dotsPosition;
 motionVectors = Stimulus.motionVectors;
@@ -36,12 +36,22 @@ for i = 1:motionFieldSize(1)
         if isempty(allMotionVectorsInside)
             averageMotionInsideAmp(i,j) = 0;
             averageMotionInsideAngle(i,j) = 0;
-        else
+            
+        elseif ~isempty(allMotionVectorsInside)
+            
             allMotionVectorsInsideTwoRows = reshape(allMotionVectorsInside,2,length(allMotionVectorsInside)./2);
+            
             averageMotionInsideX = sum(allMotionVectorsInsideTwoRows(1,:) .* cos(allMotionVectorsInsideTwoRows(2,:)));
             averageMotionInsideY = sum(allMotionVectorsInsideTwoRows(1,:) .* sin(allMotionVectorsInsideTwoRows(2,:)));
             averageMotionInsideAmp(i,j) = sqrt(averageMotionInsideX^2 + averageMotionInsideY^2)./(length(allMotionVectorsInside)./2);
             averageMotionInsideAngle(i,j) = atan(averageMotionInsideY./averageMotionInsideX);
+            if averageMotionInsideX == 0 && averageMotionInsideY == 0
+                averageMotionInsideAngle(i,j) = 0;
+            end
+            if (averageMotionInsideX < 0 && averageMotionInsideY < 0) || (averageMotionInsideX < 0 && averageMotionInsideY > 0)
+                averageMotionInsideAngle(i,j) = averageMotionInsideAngle(i,j) + pi;
+            end
+            
         end
         
        

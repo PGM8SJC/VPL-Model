@@ -88,11 +88,11 @@ end
 %     figure(1);imagesc(I);colormap(gray);pause(1/framerate)
 % end
 
-for i = 1:numFramesNeeded
-    figure(1);imagesc(zeros(screenSize(1),screenSize(1)));colormap(gray);hold on;
-    figure(1);quiver(squeeze(dotsPosition(2,:,i)),squeeze(dotsPosition(1,:,i)),motionVectors(1,:,i) .* sin(motionVectors(2,:,i)),motionVectors(1,:,i) .* cos(motionVectors(2,:,i)),'Color','k');
-    pause(1/framerate)
-end
+% for i = 1:numFramesNeeded
+%     figure(1);imagesc(zeros(screenSize(1),screenSize(1)));colormap(gray);hold on;
+%     figure(1);quiver(squeeze(dotsPosition(2,:,i)),squeeze(dotsPosition(1,:,i)),motionVectors(1,:,i) .* sin(motionVectors(2,:,i)),motionVectors(1,:,i) .* cos(motionVectors(2,:,i)),'Color','k');
+%     pause(1/framerate)
+% end
 
 Stimulus.dotsPosition = dotsPosition;
 Stimulus.motionVectors = motionVectors;
