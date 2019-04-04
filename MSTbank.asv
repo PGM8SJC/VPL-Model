@@ -70,10 +70,9 @@ end
 
 
 % summation over MT subunits to generate MST units responses
-allMTrespNonlinear = MT2MSTweights .* (max(allMTresp,0).^.3);
-allMTrespSum = squeeze(sum(allMTrespNonlinear,2));
-postMax = allMTrespSum;
-% postMax = max(allMTrespSum,0);
+allMTrespSum = squeeze(sum(MT2MSTweights .* allMTresp,2));
+
+postMax = max(allMTrespSum,0);
 MST = postMax;
 params.Connectivity = Connectivity;
 
@@ -110,10 +109,6 @@ end
 whichPreferredSpeed = randi(numSpeeds,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
 whichPreferredTheta = randi(numThetas,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
 MT2MSTweights = rand(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2) - 0.2; % 80% of weights are positive
-NegWeightIdx = find(MT2MSTweights<0);
-MT2MSTweights(NegWeightIdx) = -rand(1,length(NegWeightIdx));
-PosWeightIdx = find(MT2MSTweights>=0);
-MT2MSTweights(PosWeightIdx) = rand(1,length(PosWeightIdx));
 
 Connectivity.whichSpatialPosition = whichSpatialPosition;
 Connectivity.whichPreferredSpeed = whichPreferredSpeed;
