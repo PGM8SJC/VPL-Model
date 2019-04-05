@@ -89,7 +89,8 @@ end
                         
                         Xf = X1.*X2/themaxes(ll,uu);
                         
-                        X(:,ll,kk,:,oo,uu,hh) = thresh(Xf*squeeze(filts(:,:,hh)));
+%                         X(:,ll,kk,:,oo,uu,hh) = thresh(Xf*squeeze(filts(:,:,hh)));
+                        X(:,ll,kk,:,oo,uu,hh) = (Xf*squeeze(filts(:,:,hh)));
                         
                         xs(ll,kk,:,oo,uu,hh) = xr;
                         ys(ll,kk,:,oo,uu,hh) = yr;

@@ -70,7 +70,7 @@ end
 
 
 % summation over MT subunits to generate MST units responses
-allMTrespNonlinear = MT2MSTweights .* (max(allMTresp,0).^.3);
+allMTrespNonlinear = MT2MSTweights .* (max(allMTresp,0).^2);
 allMTrespSum = squeeze(sum(allMTrespNonlinear,2));
 postMax = allMTrespSum;
 % postMax = max(allMTrespSum,0);

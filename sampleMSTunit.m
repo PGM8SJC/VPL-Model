@@ -30,13 +30,14 @@ for dir = 0:pi/4:(2*pi - pi/4)
     MT = squeeze(MT);
     newMST = false;
     [MST, MSTparams] = MSTbank(MT, MTparams,newMST);
-    [X1] = max(MST,[],2);
+%     [X1] = max(MST,[],2);
+    X1 = MST(:,287);
     NeuroResp(i,:) = X1(:);
 %     close;
 end
 
 figure;
-baseline = min(NeuroResp(:));
+baseline = 0;%min(NeuroResp(:));
 themax = max(NeuroResp(:));
 rg = [baseline-(themax-baseline),themax];
 for i = 1:100
