@@ -1,6 +1,6 @@
 function setStimulusParameters()
 
-M.screenSize      = [500,500];    % pixels    
+M.screenSize      = [600,600];    % pixels    
 M.dotSize         = [1];          % pixels
 M.dotDensity      = [0.01];       % number of dots per pixel^2
 M.speed           = [100];        % pixel/sec

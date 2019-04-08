@@ -21,7 +21,7 @@ numSpeeds = length(Speeds);
 % MST bank parameters
 spatialSigma = 2;
 numMSTUnitsPerPos = 100;
-numMTsubUnitsPerMSTUnit = 15;
+numMTsubUnitsPerMSTUnit = 10;
 
 
 % MT units at which locations send input to each MST unit? 
@@ -70,9 +70,10 @@ end
 
 
 % summation over MT subunits to generate MST units responses
-allMTrespSum = squeeze(sum(MT2MSTweights .* allMTresp,2));
-
-postMax = max(allMTrespSum,0);
+allMTrespNonlinear = MT2MSTweights .* (max(allMTresp,0).^1);
+allMTrespSum = squeeze(sum(allMTrespNonlinear,2));
+postMax = allMTrespSum;
+% postMax = max(allMTrespSum,0);
 MST = postMax;
 params.Connectivity = Connectivity;
 
@@ -109,6 +110,10 @@ end
 whichPreferredSpeed = randi(numSpeeds,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
 whichPreferredTheta = randi(numThetas,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
 MT2MSTweights = rand(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2) - 0.2; % 80% of weights are positive
+NegWeightIdx = find(MT2MSTweights<0);
+MT2MSTweights(NegWeightIdx) = -rand(1,length(NegWeightIdx));
+PosWeightIdx = find(MT2MSTweights>=0);
+MT2MSTweights(PosWeightIdx) = rand(1,length(PosWeightIdx));
 
 Connectivity.whichSpatialPosition = whichSpatialPosition;
 Connectivity.whichPreferredSpeed = whichPreferredSpeed;

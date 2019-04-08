@@ -19,7 +19,8 @@ omega0 = M.omega0;
 
 numDots = floor(apertureDiam * apertureDiam * dotDensity); % assuming that the aperture is square
 
-dotsInitialPosition = [randperm(apertureDiam,numDots) + apertureLoc(1) - apertureDiam/2;randperm(apertureDiam,numDots)+ apertureLoc(2) - apertureDiam/2];
+% dotsInitialPosition = [randperm(apertureDiam,numDots) + apertureLoc(1) - apertureDiam/2;randperm(apertureDiam,numDots)+ apertureLoc(2) - apertureDiam/2];
+dotsInitialPosition = [randi(apertureDiam,1,numDots) + apertureLoc(1) - apertureDiam/2;randi(apertureDiam,1,numDots)+ apertureLoc(2) - apertureDiam/2];
 initialLife = rand(1,numDots) * lifeTime;
 initialMotionVector = repmat([speed;direction],1,numDots);
 numFramesNeeded = floor(duration * framerate / 1000);
