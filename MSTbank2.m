@@ -1,12 +1,17 @@
-function [MST, params] = MSTbank(MT, MTparams,newMST)
+function [MST, params] = MSTbank2(MT, MTparams,newMST)
+
+% Main difference compared to MSTbank: MT subunits that make one MST unit 
+% have the same tuning for all spatial positions. 
+
 
 global spatialSigma numSpeeds numThetas numMSTUnitsPerPos numMTsubUnitsPerMSTUnit spatialWidth
 if nargin < 3
     newMST = false;
 end
 
-% MT = X;
+% MT = MT;
 % MTparams = params;
+% newMST = true;
 
 % This function simulates MST population from MT population. Every MST unit
 % gets input from N MT units. The pattern of connectivity is simulated in
@@ -19,9 +24,9 @@ Speeds = unique(MTparams.speeds);
 numSpeeds = length(Speeds);
 
 % MST bank parameters
-spatialSigma = 2;
+spatialSigma = 20;%2;
 numMSTUnitsPerPos = 100;
-numMTsubUnitsPerMSTUnit = 10;
+numMTsubUnitsPerMSTUnit = 15;
 
 
 % MT units at which locations send input to each MST unit? 
@@ -54,24 +59,33 @@ end
 
 % adding all the selected MT subunits in one matrix
 % each element in allMTresp is an MT response to the stimulus
-allMTresp = zeros(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
+% allMTresp = zeros(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit);
 for mstcounter = 1:numMSTUnitsPerPos
     for spatialIdx = 1:spatialWidth^2
-        thisMSTsubunits = [squeeze(whichSpatialPosition(mstcounter,:,spatialIdx));squeeze(whichPreferredSpeed(mstcounter,:,1)); squeeze(whichPreferredTheta(mstcounter,:,1))];
+        [i,j] = ind2sub([spatialWidth,spatialWidth],spatialIdx);
+        g = spatialFilter(i,j,spatialSigma,spatialWidth);
+        greshape = reshape(g,spatialWidth^2,1);
+        thisWeight = squeeze(MT2MSTweights(mstcounter,:,spatialIdx));
+        thisMSTsubunits = [squeeze(whichPreferredSpeed(mstcounter,:,spatialIdx)); squeeze(whichPreferredTheta(mstcounter,:,spatialIdx))];
+%         thisMSTsubunits = [squeeze(whichSpatialPosition(mstcounter,:,spatialIdx));squeeze(whichPreferredSpeed(mstcounter,:,1)); squeeze(whichPreferredTheta(mstcounter,:,1))];
         for subunitcounter = 1:numMTsubUnitsPerMSTUnit
-            thisMT = MT(thisMSTsubunits(2,subunitcounter),thisMSTsubunits(3,subunitcounter),thisMSTsubunits(1,subunitcounter));
-            allMTresp(mstcounter,subunitcounter,spatialIdx) = thisMT;
+            thisMT = squeeze(MT(thisMSTsubunits(1,subunitcounter),thisMSTsubunits(2,subunitcounter),:));
+%             thisMT = sum(thisMT.*greshape);
+%             thisMT = MT(thisMSTsubunits(2,subunitcounter),thisMSTsubunits(3,subunitcounter),thisMSTsubunits(1,subunitcounter));
+            allMTresp(mstcounter,subunitcounter,:) = thisMT;
             clear thisMT
             
         end
+        allMTLocResp = squeeze(sum(repmat(thisWeight,1,1,spatialWidth^2).*(max(allMTresp,0).^2),2));
+        allMTrespSum(mstcounter,spatialIdx) = sum(allMTLocResp.*greshape);
     end
 end
 
 
 
 % summation over MT subunits to generate MST units responses
-allMTrespNonlinear = MT2MSTweights .* (max(allMTresp,0).^1);
-allMTrespSum = squeeze(sum(allMTrespNonlinear,2));
+% allMTrespNonlinear = MT2MSTweights .* (max(allMTresp,0).^2);
+% allMTrespSum = squeeze(sum(allMTrespNonlinear,2));
 postMax = allMTrespSum;
 % postMax = max(allMTrespSum,0);
 MST = postMax;
@@ -121,5 +135,12 @@ Connectivity.whichPreferredTheta = whichPreferredTheta;
 Connectivity.MT2MSTweights = MT2MSTweights;
 
 save('Connectivity.mat','Connectivity');
+
+end
+
+function g = spatialFilter(i,j,spatialSigma,spatialWidth)
+[x,y] = meshgrid(1:spatialWidth,1:spatialWidth);
+
+g = (1./((spatialSigma^2)*(2*pi))) * exp(-0.5*((x-i).^2 + (y - j).^2)./(spatialSigma^2));
 
 end

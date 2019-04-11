@@ -57,7 +57,7 @@ end
 allMTresp = zeros(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
 for mstcounter = 1:numMSTUnitsPerPos
     for spatialIdx = 1:spatialWidth^2
-        thisMSTsubunits = [squeeze(whichSpatialPosition(mstcounter,:,spatialIdx));squeeze(whichPreferredSpeed(mstcounter,:,1)); squeeze(whichPreferredTheta(mstcounter,:,1))];
+        thisMSTsubunits = [squeeze(whichSpatialPosition(mstcounter,:,spatialIdx));squeeze(whichPreferredSpeed(mstcounter,:,spatialIdx)); squeeze(whichPreferredTheta(mstcounter,:,spatialIdx))];
         for subunitcounter = 1:numMTsubUnitsPerMSTUnit
             thisMT = MT(thisMSTsubunits(2,subunitcounter),thisMSTsubunits(3,subunitcounter),thisMSTsubunits(1,subunitcounter));
             allMTresp(mstcounter,subunitcounter,spatialIdx) = thisMT;
@@ -84,6 +84,47 @@ params.Connectivity = Connectivity;
 end
 
 function Connectivity = setMTMSTConnectivity()
+
+global spatialSigma numSpeeds  numThetas numMSTUnitsPerPos numMTsubUnitsPerMSTUnit spatialWidth
+
+whichSpatialPosition = zeros(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth*spatialWidth);
+for mstcounter = 1:numMSTUnitsPerPos
+    for i = 1:spatialWidth
+        for j = 1:spatialWidth
+            
+            posIdx = sub2ind([spatialWidth,spatialWidth],i,j);
+            posTemp = round(mvnrnd([i,j],[spatialSigma,0;0,spatialSigma],numMTsubUnitsPerMSTUnit));
+            [ro,co] = find(posTemp <= 0 | posTemp > spatialWidth);
+            posTemp(ro,1) = i;
+            posTemp(ro,2) = j;
+            
+            whichPosIdx = sub2ind([spatialWidth,spatialWidth],posTemp(:,1),posTemp(:,2));
+            whichSpatialPosition(mstcounter,:,posIdx) = whichPosIdx;
+            clear whichPosIdx posTemp;
+            
+            
+        end
+    end
+end
+
+whichPreferredSpeed = randi(numSpeeds,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
+whichPreferredTheta = randi(numThetas,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
+MT2MSTweights = rand(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2) - 0.2; % 80% of weights are positive
+NegWeightIdx = find(MT2MSTweights<0);
+MT2MSTweights(NegWeightIdx) = -rand(1,length(NegWeightIdx));
+PosWeightIdx = find(MT2MSTweights>=0);
+MT2MSTweights(PosWeightIdx) = rand(1,length(PosWeightIdx));
+
+Connectivity.whichSpatialPosition = whichSpatialPosition;
+Connectivity.whichPreferredSpeed = whichPreferredSpeed;
+Connectivity.whichPreferredTheta = whichPreferredTheta;
+Connectivity.MT2MSTweights = MT2MSTweights;
+
+save('Connectivity.mat','Connectivity');
+
+end
+
+function Connectivity = setMTMSTConnectivity2()
 
 global spatialSigma numSpeeds  numThetas numMSTUnitsPerPos numMTsubUnitsPerMSTUnit spatialWidth
 
