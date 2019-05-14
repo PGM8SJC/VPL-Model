@@ -8,8 +8,9 @@ maxspeed = single(max(Xr(:)));
 [MT, params] = MTbank(Xt,Xr,maxspeed);
 MT = squeeze(MT);
 newMST = true;
-[MST, params] = MSTbank(MT, params,newMST);     
-
+tic;
+[MST, params] = MSTbank3(MT, params,newMST);     
+toc;
 
 
 %% simulate responses of a MST population to a range of stimuli motions
@@ -29,23 +30,24 @@ for dir = 0:pi/4:(2*pi - pi/4)
     [MT, MTparams] = MTbank(Xt,Xr,maxspeed);
     MT = squeeze(MT);
     newMST = false;
-    [MST, MSTparams] = MSTbank(MT, MTparams,newMST);
+    [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
 %     [X1] = max(MST,[],2);
-    X1 = MST(:,287);
+    X1 = MST(:,435);
     NeuroResp(i,:) = X1(:);
 %     close;
 end
 
 figure;
-baseline = 0;%min(NeuroResp(:));
-themax = max(NeuroResp(:));
+ 
+for i = 1:20
+  baseline = min(NeuroResp(:,i));
+themax = max(NeuroResp(:,i));
 rg = [baseline-(themax-baseline),themax];
-for i = 1:100
-   
-    subplot(10,10,i);colormap(jet);polarmosaic(NeuroResp(:,i),rg,.35,1);box off
+    subplot(4,5,i);colormap(jet);polarmosaic(NeuroResp(:,i),rg,.35,1);box off
 end
 
 %% simulate responses of a MST population to different stimuli locations
+tic;
 load ./StimulusParam.mat;
 dircounter = 0;
 allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
@@ -66,22 +68,26 @@ for loccounter = 1:9
     [MT, MTparams] = MTbank(Xt,Xr,maxspeed);
     MT = squeeze(MT);
     newMST = false;
-    [MST, MSTparams] = MSTbank(MT, MTparams,newMST);
+    [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
 %     [X1] = max(MST,[],2);
-    X1 = MST(:,287);
+    X1 = MST(:,435);
     NeuroResp(dircounter,loccounter,:) = X1(:);
 %     close;
 end
 end
-
+toc;
 figure;
-baseline = 0;%min(NeuroResp(:));
-themax = max(NeuroResp(:));
-rg = [baseline-(themax-baseline),themax];
+% baseline = 0;%min(NeuroResp(:));
+% themax = max(NeuroResp(:));
+% rg = [baseline-(themax-baseline),themax];
 for n = 1:20
-for i = 1:9
-   
-    subplot(3,3,i);colormap(jet);polarmosaic(squeeze(NeuroResp(:,i,n)),rg,.35,1);box off;
-end
-pause;close
+    thisResp = squeeze(NeuroResp(:,:,n));
+    baseline = 0;%min(thisResp(:));
+    themax = max(thisResp(:));
+    rg = [baseline-(themax-baseline),themax];
+    for i = 1:9
+        
+        subplot(3,3,i);colormap(jet);polarmosaic(squeeze(NeuroResp(:,i,n)),rg,.35,1);box off;
+    end
+    pause;close
 end

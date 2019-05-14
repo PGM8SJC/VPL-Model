@@ -1,7 +1,6 @@
-function [MST, params] = MSTbank2(MT, MTparams,newMST)
+function [MST, params] = MSTbank3(MT, MTparams,newMST)
 
-% Main difference compared to MSTbank: MT subunits that make one MST unit 
-% have the same tuning for all spatial positions. 
+% Main difference compared to MSTbank: ... It involves convolution. 
 
 
 global spatialSigma numSpeeds numThetas numMSTUnitsPerPos numMTsubUnitsPerMSTUnit spatialWidth
@@ -24,9 +23,9 @@ Speeds = unique(MTparams.speeds);
 numSpeeds = length(Speeds);
 
 % MST bank parameters
-spatialSigma = 5;%2;
+spatialSigma = 15;%2;
 numMSTUnitsPerPos = 20;
-numMTsubUnitsPerMSTUnit = 4;%15
+numMTsubUnitsPerMSTUnit = 20;%15
 
 
 % MT units at which locations send input to each MST unit? 
@@ -62,26 +61,23 @@ end
 % allMTresp = zeros(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit);
 
 for mstcounter = 1:numMSTUnitsPerPos
+    thisWeight = MT2MSTweights(mstcounter,:);
+    thisMTsubunits = [whichPreferredSpeed(mstcounter,:);whichPreferredTheta(mstcounter,:)];
+    thisSpatialPositions = whichSpatialPosition(mstcounter,:);
+    [I,J] = ind2sub([spatialSigma,spatialSigma],thisSpatialPositions);
     
-    for spatialIdx = 1:spatialWidth^2
-        
-        [i,j] = ind2sub([spatialWidth,spatialWidth],spatialIdx);
-        g = spatialFilter(i,j,spatialSigma,spatialWidth);
-        greshape = reshape(g,spatialWidth^2,1);
-        thisWeight = squeeze(MT2MSTweights(mstcounter,:,spatialIdx));
-        thisMSTsubunits = [squeeze(whichPreferredSpeed(mstcounter,:,spatialIdx)); squeeze(whichPreferredTheta(mstcounter,:,spatialIdx))];
-%         thisMSTsubunits = [squeeze(whichSpatialPosition(mstcounter,:,spatialIdx));squeeze(whichPreferredSpeed(mstcounter,:,1)); squeeze(whichPreferredTheta(mstcounter,:,1))];
-        for subunitcounter = 1:numMTsubUnitsPerMSTUnit
-            thisMT = squeeze(MT(thisMSTsubunits(1,subunitcounter),thisMSTsubunits(2,subunitcounter),:));
-%             thisMT = sum(thisMT.*greshape);
-%             thisMT = MT(thisMSTsubunits(2,subunitcounter),thisMSTsubunits(3,subunitcounter),thisMSTsubunits(1,subunitcounter));
-            allMTresp(mstcounter,subunitcounter,:) = thisMT;
-%             clear thisMT
-            
-        end
-        allMTLocResp = squeeze(sum(repmat(thisWeight,1,1,spatialWidth^2).*(max(allMTresp(mstcounter,:,:),0).^.3),2));
-        allMTrespSum(mstcounter,spatialIdx) = sum(allMTLocResp.*greshape);
+    % build the kernel
+    Kernel = zeros(numSpeeds,numThetas,spatialSigma,spatialSigma);
+    
+    for subunitcounter = 1:numMTsubUnitsPerMSTUnit
+        Kernel(thisMTsubunits(1,subunitcounter),thisMTsubunits(2,subunitcounter),I(subunitcounter),J(subunitcounter)) = thisWeight(subunitcounter);
     end
+    
+    MTreshape = reshape(MT,numSpeeds,numThetas,spatialWidth,spatialWidth);
+    
+    thisMST(:,:,mstcounter) = simpleNdConv(MTreshape,Kernel);
+    
+    
 end
 
 
@@ -89,8 +85,7 @@ end
 % summation over MT subunits to generate MST units responses
 % allMTrespNonlinear = MT2MSTweights .* (max(allMTresp,0).^2);
 % allMTrespSum = squeeze(sum(allMTrespNonlinear,2));
-postMax = allMTrespSum;
-MST = postMax;
+MST = reshape(thisMST,spatialWidth^2,numMSTUnitsPerPos)';
 params.Connectivity = Connectivity;
 
 
@@ -103,29 +98,14 @@ function Connectivity = setMTMSTConnectivity()
 
 global spatialSigma numSpeeds  numThetas numMSTUnitsPerPos numMTsubUnitsPerMSTUnit spatialWidth
 
-whichSpatialPosition = zeros(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth*spatialWidth);
 for mstcounter = 1:numMSTUnitsPerPos
-    for i = 1:spatialWidth
-        for j = 1:spatialWidth
-            
-            posIdx = sub2ind([spatialWidth,spatialWidth],i,j);
-            posTemp = round(mvnrnd([i,j],[spatialSigma,0;0,spatialSigma],numMTsubUnitsPerMSTUnit));
-            [ro,co] = find(posTemp <= 0 | posTemp > spatialWidth);
-            posTemp(ro,1) = i;
-            posTemp(ro,2) = j;
-            
-            whichPosIdx = sub2ind([spatialWidth,spatialWidth],posTemp(:,1),posTemp(:,2));
-            whichSpatialPosition(mstcounter,:,posIdx) = whichPosIdx;
-            clear whichPosIdx posTemp;
-            
-            
-        end
-    end
+    whichSpatialPosition(mstcounter,:) = randperm(spatialSigma.^2,numMTsubUnitsPerMSTUnit);
 end
 
-whichPreferredSpeed = randi(numSpeeds,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
-whichPreferredTheta = randi(numThetas,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2);
-MT2MSTweights = rand(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit,spatialWidth^2) - 0.2; % 80% of weights are positive
+
+whichPreferredSpeed = randi(numSpeeds,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit);
+whichPreferredTheta = randi(numThetas,numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit);
+MT2MSTweights = rand(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit) - 0.2; % 80% of weights are positive
 NegWeightIdx = find(MT2MSTweights<0);
 MT2MSTweights(NegWeightIdx) = -rand(1,length(NegWeightIdx));
 PosWeightIdx = find(MT2MSTweights>=0);
@@ -140,10 +120,41 @@ save('Connectivity.mat','Connectivity');
 
 end
 
-function g = spatialFilter(i,j,spatialSigma,spatialWidth)
-[x,y] = meshgrid(1:spatialWidth,1:spatialWidth);
 
-% g = (1./((spatialSigma^2)*(2*pi))) * exp(-0.5*((x-i).^2 + (y - j).^2)./(spatialSigma^2));
-g = exp(-0.5*((x-i).^2 + (y - j).^2)./(spatialSigma^2));
+function Y = simpleNdConv(X,K)
+
+% this function convolves the N-dimensional array X with M-dimensional
+% kernel K, only over the two first dimensions. It is a 2d convolution over
+% an Nd array
+
+[d1,d2,dx,dy] = size(X);
+[dk1,dk2,w,w] = size(K);
+
+if (d1 ~= dk1) || (d2 ~= dk2)
+    error('kernel and the array don not have the same speed and/or theta dimensions');
+end
+
+padsize = ceil(w./2);
+padX = padarray(X,[0,0,padsize,padsize]);
+
+for i = 1:dx
+    
+    for j = 1:dy
+        
+        x = padX(:,:,(i + padsize-floor(w/2)): (i + padsize+floor(w/2)),(j + padsize-floor(w/2)): (j + padsize+floor(w/2)));
+        x_nonlinear = max(x,0).^.2;
+        y = x_nonlinear .* K;
+        
+        Y(i,j) = sum(y(:));
+        
+    end
+end
+
+
+
+
+
+
+
 
 end
