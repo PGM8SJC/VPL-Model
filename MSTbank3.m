@@ -14,7 +14,9 @@ end
 
 % This function simulates MST population from MT population. Every MST unit
 % gets input from N MT units. The pattern of connectivity is simulated in
-% this code. 
+% this code. Every MST unit has a receptive field (a kernel with specific
+% connections from MT). The two-dimentsional kernel is convolved with the
+% maps that are the output of MT layer.
 
 spatialWidth = sqrt(size(MT,3));
 Thetas = unique(MTparams.thetas);
@@ -23,16 +25,18 @@ Speeds = unique(MTparams.speeds);
 numSpeeds = length(Speeds);
 
 % MST bank parameters
-spatialSigma = 15;%2;
+spatialSigma = 21;%2;
 numMSTUnitsPerPos = 20;
-numMTsubUnitsPerMSTUnit = 20;%15
+numMTsubUnitsPerMSTUnit = 15;%15
+kernelW = 10;
+strideSize = 4;
 
 
 % MT units at which locations send input to each MST unit? 
 % My model here: 
-% a Gaussian centered at each MST location sets the probability of the
-% location of projecting MT units (numMTsubUnitsPerMSTUnit). For each location                                                                                                                           on, there are
-% numMSTUnitsPerPos of MST units are simulated.
+% There is a kernel that corresponds to a single MST receptive field. The
+% non-zerp elements of the kernel (chosen randomly) determine the MT-to-MST
+% projections.
 
 
 % set the tuning parameters of the MT subunits for each MST unit;
@@ -56,9 +60,7 @@ else
     MT2MSTweights = Connectivity.MT2MSTweights; % assigning the synaptic weights from MT subunits to MST units 
 end
 
-% adding all the selected MT subunits in one matrix
-% each element in allMTresp is an MT response to the stimulus
-% allMTresp = zeros(numMSTUnitsPerPos,numMTsubUnitsPerMSTUnit);
+
 
 for mstcounter = 1:numMSTUnitsPerPos
     thisWeight = MT2MSTweights(mstcounter,:);
@@ -80,12 +82,9 @@ for mstcounter = 1:numMSTUnitsPerPos
     
 end
 
-
-
-% summation over MT subunits to generate MST units responses
-% allMTrespNonlinear = MT2MSTweights .* (max(allMTresp,0).^2);
-% allMTrespSum = squeeze(sum(allMTrespNonlinear,2));
-MST = reshape(thisMST,spatialWidth^2,numMSTUnitsPerPos)';
+pooledMST = pooling(thisMST, kernelW, strideSize);
+downsampledSpatialWidth = size(pooledMST,1);
+MST = reshape(pooledMST,downsampledSpatialWidth^2,numMSTUnitsPerPos)';
 params.Connectivity = Connectivity;
 
 
@@ -142,7 +141,7 @@ for i = 1:dx
     for j = 1:dy
         
         x = padX(:,:,(i + padsize-floor(w/2)): (i + padsize+floor(w/2)),(j + padsize-floor(w/2)): (j + padsize+floor(w/2)));
-        x_nonlinear = max(x,0).^.2;
+        x_nonlinear = max(x,0).^.08;
         y = x_nonlinear .* K;
         
         Y(i,j) = sum(y(:));
@@ -152,9 +151,31 @@ end
 
 
 
+end
 
 
+function pooledmap = pooling(maps, kernelW, strideSize)
 
+global spatialWidth
+padsize = ceil(kernelW./2);
+maps = padarray(maps,[padsize,padsize,0]);
 
+k = 0;
+for i = 1:strideSize:(spatialWidth + padsize*2 - kernelW)
+    k = k + 1;
+    h = 0;
+    for j = 1:strideSize:(spatialWidth + padsize*2 - kernelW)
+        h = h + 1;
+        thispart = maps(i:(i+kernelW-1),j:(j+kernelW-1),:);
+%         pooledmap(k,h,:) = max(squeeze(max((thispart),[],1)),[],1);
+%          pooledmap(k,h,:) = mean(squeeze(mean(thispart,1)),1);
+%           pooledmap(k,h,:) = median(rsqueeze(median(thispart,1)),1);
+        MAXpooled = max(squeeze(max((thispart),[],1)),[],1);
+        MINpooled = min(squeeze(min((thispart),[],1)),[],1);
+        MAXorMIN = abs(MAXpooled) > abs(MINpooled);
+        pooledmap(k,h,MAXorMIN) = MAXpooled(MAXorMIN);
+        pooledmap(k,h,~MAXorMIN) = MINpooled(~MAXorMIN);
+    end
+end
 
 end
