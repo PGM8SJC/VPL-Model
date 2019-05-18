@@ -7,7 +7,7 @@ Xt = reshape(MotionField.averageMotionInsideAngle,1,size(MotionField.averageMoti
 maxspeed = single(max(Xr(:)));
 [MT, params] = MTbank(Xt,Xr,maxspeed);
 MT = squeeze(MT);
-newMST = true;
+newMST = false;
 tic;
 [MST, params] = MSTbank3(MT, params,newMST);     
 toc;
@@ -32,7 +32,7 @@ for dir = 0:pi/4:(2*pi - pi/4)
     newMST = false;
     [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
 %     [X1] = max(MST,[],2);
-    X1 = MST(:,435);
+    X1 = MST(:,36);
     NeuroResp(i,:) = X1(:);
 %     close;
 end
@@ -40,7 +40,7 @@ end
 figure;
  
 for i = 1:20
-  baseline = min(NeuroResp(:,i));
+  baseline = 0;%min(NeuroResp(:,i));
 themax = max(NeuroResp(:,i));
 rg = [baseline-(themax-baseline),themax];
     subplot(4,5,i);colormap(jet);polarmosaic(NeuroResp(:,i),rg,.35,1);box off
@@ -70,23 +70,22 @@ for loccounter = 1:9
     newMST = false;
     [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
 %     [X1] = max(MST,[],2);
-    X1 = MST(:,435);
+    X1 = MST(:,36);
     NeuroResp(dircounter,loccounter,:) = X1(:);
 %     close;
 end
 end
 toc;
 figure;
-% baseline = 0;%min(NeuroResp(:));
-% themax = max(NeuroResp(:));
-% rg = [baseline-(themax-baseline),themax];
+baseline = 0;%min(NeuroResp(:));
+themax = max(NeuroResp(:));
+rg = [baseline-(themax-baseline),themax];
 for n = 1:20
     thisResp = squeeze(NeuroResp(:,:,n));
-    baseline = 0;%min(thisResp(:));
-    themax = max(thisResp(:));
+%     baseline = 0;%min(thisResp(:));
+%     themax = max(thisResp(:));
     rg = [baseline-(themax-baseline),themax];
     for i = 1:9
-        
         subplot(3,3,i);colormap(jet);polarmosaic(squeeze(NeuroResp(:,i,n)),rg,.35,1);box off;
     end
     pause;close
