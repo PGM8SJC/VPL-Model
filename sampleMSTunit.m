@@ -7,7 +7,7 @@ Xt = reshape(MotionField.averageMotionInsideAngle,1,size(MotionField.averageMoti
 maxspeed = single(max(Xr(:)));
 [MT, params] = MTbank(Xt,Xr,maxspeed);
 MT = squeeze(MT);
-newMST = false;
+newMST = true;
 tic;
 [MST, params] = MSTbank3(MT, params,newMST);     
 toc;
@@ -39,11 +39,11 @@ end
 
 figure;
  
-for i = 1:20
-  baseline = 0;%min(NeuroResp(:,i));
+for i = 1:50
+  baseline = min(NeuroResp(:,i));
 themax = max(NeuroResp(:,i));
 rg = [baseline-(themax-baseline),themax];
-    subplot(4,5,i);colormap(jet);polarmosaic(NeuroResp(:,i),rg,.35,1);box off
+    subplot(7,8,i);colormap(jet);polarmosaic(NeuroResp(:,i),rg,.35,1);box off
 end
 
 %% simulate responses of a MST population to different stimuli locations
@@ -70,20 +70,24 @@ for loccounter = 1:9
     newMST = false;
     [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
 %     [X1] = max(MST,[],2);
-    X1 = MST(:,36);
+%     X1 = max(MST(:,:),[],2);
+    X1max = max(MST(:,:),[],2);
+    X1min = min(MST(:,:),[],2);
+    X1(abs(X1max) > abs(X1min)) = X1max(abs(X1max) > abs(X1min));
+    X1(abs(X1max) <= abs(X1min)) = X1min(abs(X1max) <= abs(X1min));
     NeuroResp(dircounter,loccounter,:) = X1(:);
 %     close;
 end
 end
 toc;
 figure;
-baseline = 0;%min(NeuroResp(:));
-themax = max(NeuroResp(:));
-rg = [baseline-(themax-baseline),themax];
-for n = 1:20
+% baseline = 0;%min(NeuroResp(:));
+% themax = max(NeuroResp(:));
+% rg = [baseline-(themax-baseline),themax];
+for n = 1:50
     thisResp = squeeze(NeuroResp(:,:,n));
-%     baseline = 0;%min(thisResp(:));
-%     themax = max(thisResp(:));
+    baseline = min(thisResp(:));
+    themax = max(thisResp(:));
     rg = [baseline-(themax-baseline),themax];
     for i = 1:9
         subplot(3,3,i);colormap(jet);polarmosaic(squeeze(NeuroResp(:,i,n)),rg,.35,1);box off;

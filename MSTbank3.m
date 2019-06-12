@@ -25,10 +25,10 @@ Speeds = unique(MTparams.speeds);
 numSpeeds = length(Speeds);
 
 % MST bank parameters
-spatialSigma = 21;%2;
-numMSTUnitsPerPos = 20;
-numMTsubUnitsPerMSTUnit = 15;%15
-kernelW = 10;
+spatialSigma = 11;%2;
+numMSTUnitsPerPos = 50;
+numMTsubUnitsPerMSTUnit = 5;%15
+kernelW = 11;
 strideSize = 4;
 
 
@@ -84,6 +84,7 @@ end
 
 pooledMST = pooling(thisMST, kernelW, strideSize);
 downsampledSpatialWidth = size(pooledMST,1);
+% pooledMST = max(pooledMST,0).^0.1;
 MST = reshape(pooledMST,downsampledSpatialWidth^2,numMSTUnitsPerPos)';
 params.Connectivity = Connectivity;
 
