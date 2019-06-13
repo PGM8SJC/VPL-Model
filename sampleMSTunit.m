@@ -94,3 +94,35 @@ for n = 1:50
     end
     pause;close
 end
+
+%% To decode motion type
+
+tic;
+load ./StimulusParam.mat;
+numTrials = 100;
+allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
+for trcounter = 1:numTrials
+    fprintf(['trial ',num2str(trcounter),'\n']);
+    M.apertureLoc = allApertureLoc(1,:);
+    if rand > 0.5
+        dir(trcounter) = 0;
+    else
+        dir(trcounter) = pi;
+    end
+    M.direction = dir(trcounter);
+    save('./StimulusParam.mat','M');
+    
+    [Stimulus] = generateStimulus();
+    MotionField = estimateMotionField(Stimulus); 
+    
+    Xr = reshape(log(MotionField.averageMotionInsideAmp/10),1,size(MotionField.averageMotionInsideAmp,1)*size(MotionField.averageMotionInsideAmp,2));
+    Xt = reshape(MotionField.averageMotionInsideAngle,1,size(MotionField.averageMotionInsideAngle,1)*size(MotionField.averageMotionInsideAngle,2));
+    maxspeed = single(max(Xr(:)));
+    [MT, MTparams] = MTbank(Xt,Xr,maxspeed);
+    MT = squeeze(MT);
+    newMST = false;
+    [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
+    allMST(:,trcounter) = reshape(MST,size(MST,1)*size(MST,2),1);
+    allMT(:,trcounter) = reshape(MT,size(MT,1)*size(MT,2)*size(MT,3),1);
+end
+toc
