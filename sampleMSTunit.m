@@ -100,16 +100,14 @@ end
 tic;
 load ./StimulusParam.mat;
 numTrials = 100;
+DIR1 = 0;
+DIR2 = pi;
 allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
-for trcounter = 1:numTrials
+for trcounter = 1:numTrials/2
     fprintf(['trial ',num2str(trcounter),'\n']);
     M.apertureLoc = allApertureLoc(1,:);
-    if rand > 0.5
-        dir(trcounter) = 0;
-    else
-        dir(trcounter) = pi;
-    end
-    M.direction = dir(trcounter);
+
+    M.direction = DIR1;
     save('./StimulusParam.mat','M');
     
     [Stimulus] = generateStimulus();
@@ -122,7 +120,51 @@ for trcounter = 1:numTrials
     MT = squeeze(MT);
     newMST = false;
     [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
-    allMST(:,trcounter) = reshape(MST,size(MST,1)*size(MST,2),1);
-    allMT(:,trcounter) = reshape(MT,size(MT,1)*size(MT,2)*size(MT,3),1);
+    allMST(trcounter,:,1) = reshape(MST,size(MST,1)*size(MST,2),1);
+    allMT(trcounter,:,1) = reshape(MT,size(MT,1)*size(MT,2)*size(MT,3),1);
 end
+for trcounter = 1:numTrials/2
+    fprintf(['trial ',num2str(trcounter),'\n']);
+    M.apertureLoc = allApertureLoc(1,:);
+    
+    M.direction = DIR2;
+    save('./StimulusParam.mat','M');
+    
+    [Stimulus] = generateStimulus();
+    MotionField = estimateMotionField(Stimulus); 
+    
+    Xr = reshape(log(MotionField.averageMotionInsideAmp/10),1,size(MotionField.averageMotionInsideAmp,1)*size(MotionField.averageMotionInsideAmp,2));
+    Xt = reshape(MotionField.averageMotionInsideAngle,1,size(MotionField.averageMotionInsideAngle,1)*size(MotionField.averageMotionInsideAngle,2));
+    maxspeed = single(max(Xr(:)));
+    [MT, MTparams] = MTbank(Xt,Xr,maxspeed);
+    MT = squeeze(MT);
+    newMST = false;
+    [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
+    allMST(trcounter,:,2) = reshape(MST,size(MST,1)*size(MST,2),1);
+    allMT(trcounter,:,2) = reshape(MT,size(MT,1)*size(MT,2)*size(MT,3),1);
+end
+
 toc
+
+%% decoding
+
+for subsamples = 1:30
+    subsamples
+    [dprimes,selectedNeuronsIdx,L] = adaptiveDecoder2(allMT,allMST,subsamples);
+    testL(subsamples) = L(end);
+end
+figure;plot(testL,'o-k');xlabel('subspace');ylabel('AIC');box off
+[~,sIdx] = min(testL);
+
+[dprimes,selectedNeuronsIdx,L,Rs] = adaptiveDecoder2(allMT,allMST,5);
+
+% proportion of MT/MST
+for iter = 1:50
+    iter
+    [dprimes,selectedNeuronsIdx,L] = adaptiveDecoder2(allMT,allMST,5);
+    selectedMST(iter) = sum(selectedNeuronsIdx(:,end) > size(allMT,2));
+    selectedMT(iter) = sum(selectedNeuronsIdx(:,end) <= size(allMT,2));
+end
+
+cohenD = (mean(selectedMST) - mean(selectedMT))./std([selectedMST,selectedMT])
+    

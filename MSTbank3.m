@@ -26,7 +26,7 @@ numSpeeds = length(Speeds);
 
 % MST bank parameters
 spatialSigma = 11;%2;
-numMSTUnitsPerPos = 50;
+numMSTUnitsPerPos = 40;
 numMTsubUnitsPerMSTUnit = 5;%15
 kernelW = 11;
 strideSize = 4;
