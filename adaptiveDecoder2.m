@@ -19,7 +19,7 @@ numIdx = length(neuronsIdx);
 whichIdx = randperm(numIdx,subsamples);
 whichNeuronsIdx = neuronsIdx(whichIdx);
 
-for trcount = 1:100
+for trcount = 1:5000
     if trcount == 1
         selectedNeuronsIdx(:,trcount) = whichNeuronsIdx;
     else
@@ -44,7 +44,7 @@ for trcount = 1:100
     mdl = fitglm(X,y,'Distribution','binomial','Link','logit');
     W = mdl.Coefficients.Estimate;
     W(1) = [];
-    dprimetemp = W;
+    dprimetemp = abs(W)./sum(abs(W));
     dprimes(:,trcount) = dprimetemp;
 %     dprimetemp = abs(meanPref - meanNull)./sqrt(.5 * (varPref + varNull));
 %     if trcount == 1

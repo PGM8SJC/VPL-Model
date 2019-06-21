@@ -1,4 +1,4 @@
-function [dprimes,selectedNeuronsIdx] = adaptiveDecoder(MTresp,MSTresp)
+function [dprimes,selectedNeuronsIdx] = adaptiveDecoder(MTresp,MSTresp,subsamples)
 
 motion1 = 1;
 motion2 = 2;
@@ -8,11 +8,21 @@ numNeuronsMST = size(MSTresp,2);
 numTrials = size(MSTresp,1);
 
 neurons = cat(2,MTresp,MSTresp);%MTresp;
-numNeuronsAll = size(neurons,2);
-subsamples = 10;
-whichNeuronsIdx = randi(numNeuronsAll,subsamples,1);
+MSTresp = (MSTresp - nanmean(MSTresp(:)))./nanstd(MSTresp(:));
+MTresp = (MTresp - nanmean(MTresp(:)))./nanstd(MTresp(:));
 
-for trcount = 1:100
+numNeuronsAll = size(neurons,2);
+numExtraMT = numNeuronsMT - numNeuronsMST;
+numRepMST = floor(numExtraMT./numNeuronsMST);
+% subsamples = 10;
+% whichNeuronsIdx = randi(numNeuronsAll,subsamples,1);
+neuronsIdx = [1:numNeuronsAll,repmat((numNeuronsMT+1):numNeuronsAll,1,numRepMST)];
+numIdx = length(neuronsIdx);
+whichIdx = randperm(numIdx,subsamples);
+whichNeuronsIdx = neuronsIdx(whichIdx);
+
+
+for trcount = 1:10000
     if trcount == 1
         selectedNeuronsIdx(:,trcount) = whichNeuronsIdx;
     else
@@ -41,7 +51,9 @@ for trcount = 1:100
     end
         
     [dptimemin,dprimeminIdx] = min(dprimes(:,trcount));
-    whichNeuronsIdx = randi(numNeuronsAll,1);
+    whichIdx = randperm(numIdx,1);
+    whichNeuronsIdx = neuronsIdx(whichIdx);
+%     whichNeuronsIdx = randi(numNeuronsAll,1);
     
     
     

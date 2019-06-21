@@ -146,25 +146,47 @@ end
 
 toc
 
+
+%% pca on MT/MST population
+
+allmt = reshape(allMT,100,21600);
+allmst = reshape(allMST,100,2560);
+allmst = (allmst - mean(allmst(:)))./(std(allmst(:)));
+allmt = (allmt - mean(allmt(:)))./(std(allmt(:)));
+[coeff1,score1,latent1] = pca([allmt,allmst]);
+figure;plot(coeff1(:,1),'-');
+
+
 %% decoding
 
-for subsamples = 1:30
-    subsamples
-    [dprimes,selectedNeuronsIdx,L] = adaptiveDecoder2(allMT,allMST,subsamples);
-    testL(subsamples) = L(end);
-end
-figure;plot(testL,'o-k');xlabel('subspace');ylabel('AIC');box off
-[~,sIdx] = min(testL);
+load ./simulated' data'/data1
+allMT = (allMT - mean(allMT(:)))./(std(allMT(:)));
+allMST = (allMST - mean(allMST(:)))./(std(allMST(:)));
+epcilon = .2;
+allMT = allMT + epcilon*randn(size(allMT));
+allMST = allMST + epcilon*randn(size(allMST));
 
-[dprimes,selectedNeuronsIdx,L,Rs] = adaptiveDecoder2(allMT,allMST,5);
+% for subsamples = 1:30
+%     subsamples
+%     [dprimes,selectedNeuronsIdx,L] = adaptiveDecoder2(allMT,allMST,subsamples);
+%     testL(subsamples) = L(end);
+% end
+% figure;plot(testL,'o-k');xlabel('subspace');ylabel('AIC');box off
+% [~,sIdx] = min(testL);
+
+% [dprimes,selectedNeuronsIdx,L,Rs] = adaptiveDecoder2(allMT,allMST,2);
+[dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT,allMST,3);
+selectedMST = sum(selectedNeuronsIdx(:,:) > size(allMT,2));
+selectedMT = sum(selectedNeuronsIdx(:,:) <= size(allMT,2));
+figure;plot(resample(selectedMST,1,10),'-b');hold on;plot(resample(selectedMT,1,10),'-r')
 
 % proportion of MT/MST
-for iter = 1:50
-    iter
-    [dprimes,selectedNeuronsIdx,L] = adaptiveDecoder2(allMT,allMST,5);
-    selectedMST(iter) = sum(selectedNeuronsIdx(:,end) > size(allMT,2));
-    selectedMT(iter) = sum(selectedNeuronsIdx(:,end) <= size(allMT,2));
-end
+% for iter = 1:50
+%     iter
+%     [dprimes,selectedNeuronsIdx,L] = adaptiveDecoder2(allMT,allMST,5);
+%     selectedMST(iter) = sum(selectedNeuronsIdx(:,end) > size(allMT,2));
+%     selectedMT(iter) = sum(selectedNeuronsIdx(:,end) <= size(allMT,2));
+% end
 
-cohenD = (mean(selectedMST) - mean(selectedMT))./std([selectedMST,selectedMT])
+% cohenD = (mean(selectedMST) - mean(selectedMT))./std([selectedMST,selectedMT])
     
