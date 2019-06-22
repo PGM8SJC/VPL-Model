@@ -159,12 +159,12 @@ figure;plot(coeff1(:,1),'-');
 
 %% decoding
 
-load ./simulated' data'/data1
-allMT = (allMT - mean(allMT(:)))./(std(allMT(:)));
-allMST = (allMST - mean(allMST(:)))./(std(allMST(:)));
-epcilon = .2;
-allMT = allMT + epcilon*randn(size(allMT));
-allMST = allMST + epcilon*randn(size(allMST));
+load ./simulated' data'/data6
+allMT_normal = (allMT - mean(allMT(:)))./(std(allMT(:)));
+allMST_normal = (allMST - mean(allMST(:)))./(std(allMST(:)));
+epcilon = 0;
+allMT_noisy = allMT_normal + epcilon*randn(size(allMT_normal));
+allMST_noisy = allMST_normal + epcilon*randn(size(allMST_normal));
 
 % for subsamples = 1:30
 %     subsamples
@@ -175,18 +175,18 @@ allMST = allMST + epcilon*randn(size(allMST));
 % [~,sIdx] = min(testL);
 
 % [dprimes,selectedNeuronsIdx,L,Rs] = adaptiveDecoder2(allMT,allMST,2);
-[dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT,allMST,3);
-selectedMST = sum(selectedNeuronsIdx(:,:) > size(allMT,2));
-selectedMT = sum(selectedNeuronsIdx(:,:) <= size(allMT,2));
-figure;plot(resample(selectedMST,1,10),'-b');hold on;plot(resample(selectedMT,1,10),'-r')
-
+[dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,2);
+selectedMST = sum(selectedNeuronsIdx(:,:) > size(allMT_noisy,2));
+selectedMT = sum(selectedNeuronsIdx(:,:) <= size(allMT_noisy,2));
+figure;subplot(2,1,1);plot(resample(selectedMST,1,10),'-b');hold on;plot(resample(selectedMT,1,10),'-r')
+subplot(2,1,2);plot(resample(double(max(dprimes,[],1)),1,10),'o-')
 % proportion of MT/MST
-% for iter = 1:50
-%     iter
-%     [dprimes,selectedNeuronsIdx,L] = adaptiveDecoder2(allMT,allMST,5);
-%     selectedMST(iter) = sum(selectedNeuronsIdx(:,end) > size(allMT,2));
-%     selectedMT(iter) = sum(selectedNeuronsIdx(:,end) <= size(allMT,2));
-% end
-
-% cohenD = (mean(selectedMST) - mean(selectedMT))./std([selectedMST,selectedMT])
+for iter = 1:50
+    iter
+    [dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,2);
+    selectedMST(iter) = sum(selectedNeuronsIdx(:,end) > size(allMT_noisy,2));
+    selectedMT(iter) = sum(selectedNeuronsIdx(:,end) <= size(allMT_noisy,2));
+end
+figure;histogram(selectedMST);hold on;histogram(selectedMT);
+cohenD = (mean(selectedMST) - mean(selectedMT))./std([selectedMST,selectedMT])
     
