@@ -100,8 +100,8 @@ end
 tic;
 load ./StimulusParam.mat;
 numTrials = 100;
-DIR1 = 0;
-DIR2 = pi;
+DIR1 = pi;
+DIR2 = 0;
 allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
 for trcounter = 1:numTrials/2
     fprintf(['trial ',num2str(trcounter),'\n']);
@@ -159,10 +159,10 @@ figure;plot(coeff1(:,1),'-');
 
 %% decoding
 
-load ./simulated' data'/data6
+load ./simulated' data'/data10
 allMT_normal = (allMT - mean(allMT(:)))./(std(allMT(:)));
 allMST_normal = (allMST - mean(allMST(:)))./(std(allMST(:)));
-epcilon = 0;
+epcilon = 0.2;
 allMT_noisy = allMT_normal + epcilon*randn(size(allMT_normal));
 allMST_noisy = allMST_normal + epcilon*randn(size(allMST_normal));
 
