@@ -159,10 +159,10 @@ figure;plot(coeff1(:,1),'-');
 
 %% decoding
 
-load ./simulated' data'/data10
+load ./simulated' data'/data11
 allMT_normal = (allMT - mean(allMT(:)))./(std(allMT(:)));
 allMST_normal = (allMST - mean(allMST(:)))./(std(allMST(:)));
-epcilon = 0.2;
+epcilon = 0.5;
 allMT_noisy = allMT_normal + epcilon*randn(size(allMT_normal));
 allMST_noisy = allMST_normal + epcilon*randn(size(allMST_normal));
 
