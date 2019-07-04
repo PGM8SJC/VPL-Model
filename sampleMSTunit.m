@@ -150,7 +150,7 @@ toc
 
 %% adaptive decoding
 
-load ./simulated' data'/data6
+load ./simulated' data'/data12
 allMT_normal = (allMT - mean(allMT(:)))./(std(allMT(:)));
 allMST_normal = (allMST - mean(allMST(:)))./(std(allMST(:)));
 epcilon = 0.2;
@@ -186,6 +186,8 @@ for dir = 0:pi/4:(2*pi - pi/4)
     dircounter = dircounter + 1;
     M.direction = dir;
 for loccounter = 1:9
+    
+
     fprintf(['location ',num2str(loccounter), ' dir ',num2str(dircounter),' ']);
     M.apertureLoc = allApertureLoc(loccounter,:);
     
@@ -262,13 +264,18 @@ end
 
 load ./StimulusParam.mat;
 dircounter = 0;
-
-allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];
+allApertureLoc = [100 100; 200 100; 300 100; 100 200; 200 200; 300 300; 100 300; 200 300; 300 300];
+% allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];
 DIR1 = pi;
 DIR2 = 0;
 for loccounter = 1:9
     fprintf(['location ',num2str(loccounter),' ']);
     for trcounter = 1:20
+        
+        [dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,numReadoutNeurons);
+        [dmax,id] = max(dprimes(:,end));
+        readoutNeuronIdx = selectedNeuronsIdx(id,end);
+        
         fprintf(['.']);
         
         

@@ -11,7 +11,7 @@ M.coherence       = [.5];          % portion of dots moving together
 M.lifeTime        = [100];        % ms
 M.duration        = [500];        % ms
 M.framerate       = 60;
-M.motiontype      = 'simple';
+M.motiontype      = 'complex';
 M.omega0          = 2;
 
 save('./StimulusParam.mat','M');
