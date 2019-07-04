@@ -80,22 +80,22 @@ for loccounter = 1:9
 end
 end
 toc;
-figure;
-% baseline = 0;%min(NeuroResp(:));
-% themax = max(NeuroResp(:));
-% rg = [baseline-(themax-baseline),themax];
-for n = 1:50
-    thisResp = squeeze(NeuroResp(:,:,n));
-    baseline = min(thisResp(:));
-    themax = max(thisResp(:));
-    rg = [baseline-(themax-baseline),themax];
-    for i = 1:9
-        subplot(3,3,i);colormap(jet);polarmosaic(squeeze(NeuroResp(:,i,n)),rg,.35,1);box off;
-    end
-    pause;close
-end
+% figure;
+% % baseline = 0;%min(NeuroResp(:));
+% % themax = max(NeuroResp(:));
+% % rg = [baseline-(themax-baseline),themax];
+% for n = 1:50
+%     thisResp = squeeze(NeuroResp(:,:,n));
+%     baseline = min(thisResp(:));
+%     themax = max(thisResp(:));
+%     rg = [baseline-(themax-baseline),themax];
+%     for i = 1:9
+%         subplot(3,3,i);colormap(jet);polarmosaic(squeeze(NeuroResp(:,i,n)),rg,.35,1);box off;
+%     end
+%     pause;close
+% end
 
-%% To decode motion type
+%% simulate MT/MST to feed to adaptive decoder
 
 tic;
 load ./StimulusParam.mat;
@@ -147,46 +147,192 @@ end
 toc
 
 
-%% pca on MT/MST population
 
-allmt = reshape(allMT,100,21600);
-allmst = reshape(allMST,100,2560);
-allmst = (allmst - mean(allmst(:)))./(std(allmst(:)));
-allmt = (allmt - mean(allmt(:)))./(std(allmt(:)));
-[coeff1,score1,latent1] = pca([allmt,allmst]);
-figure;plot(coeff1(:,1),'-');
+%% adaptive decoding
 
-
-%% decoding
-
-load ./simulated' data'/data11
+load ./simulated' data'/data6
 allMT_normal = (allMT - mean(allMT(:)))./(std(allMT(:)));
 allMST_normal = (allMST - mean(allMST(:)))./(std(allMST(:)));
-epcilon = 0.5;
+epcilon = 0.2;
 allMT_noisy = allMT_normal + epcilon*randn(size(allMT_normal));
 allMST_noisy = allMST_normal + epcilon*randn(size(allMST_normal));
+numReadoutNeurons = 2;
 
-% for subsamples = 1:30
-%     subsamples
-%     [dprimes,selectedNeuronsIdx,L] = adaptiveDecoder2(allMT,allMST,subsamples);
-%     testL(subsamples) = L(end);
-% end
-% figure;plot(testL,'o-k');xlabel('subspace');ylabel('AIC');box off
-% [~,sIdx] = min(testL);
-
-% [dprimes,selectedNeuronsIdx,L,Rs] = adaptiveDecoder2(allMT,allMST,2);
-[dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,2);
+% [dprimes,selectedNeuronsIdx,L,Rs] = adaptiveDecoder2(allMT,allMST,numReadoutNeurons);
+[dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,numReadoutNeurons);
+[dmax,id] = max(dprimes(:,end));
+readoutNeuronIdx = selectedNeuronsIdx(id,end);
 selectedMST = sum(selectedNeuronsIdx(:,:) > size(allMT_noisy,2));
 selectedMT = sum(selectedNeuronsIdx(:,:) <= size(allMT_noisy,2));
 figure;subplot(2,1,1);plot(resample(selectedMST,1,10),'-b');hold on;plot(resample(selectedMT,1,10),'-r')
 subplot(2,1,2);plot(resample(double(max(dprimes,[],1)),1,10),'o-')
-% proportion of MT/MST
-for iter = 1:50
-    iter
-    [dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,2);
-    selectedMST(iter) = sum(selectedNeuronsIdx(:,end) > size(allMT_noisy,2));
-    selectedMT(iter) = sum(selectedNeuronsIdx(:,end) <= size(allMT_noisy,2));
-end
-figure;histogram(selectedMST);hold on;histogram(selectedMT);
-cohenD = (mean(selectedMST) - mean(selectedMT))./std([selectedMST,selectedMT])
+% % proportion of MT/MST
+% for iter = 1:50
+%     iter
+%     [dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,numReadoutNeurons);
+%     selectedMST(iter) = sum(selectedNeuronsIdx(:,end) > size(allMT_noisy,2));
+%     selectedMT(iter) = sum(selectedNeuronsIdx(:,end) <= size(allMT_noisy,2));
+% end
+% figure;histogram(selectedMST);hold on;histogram(selectedMT);
+% cohenD = (mean(selectedMST) - mean(selectedMT))./std([selectedMST,selectedMT])
+%     
+
+%% tuning of the readout neuron
+load ./StimulusParam.mat;
+dircounter = 0;
+
+allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
+for dir = 0:pi/4:(2*pi - pi/4)
+    dircounter = dircounter + 1;
+    M.direction = dir;
+for loccounter = 1:9
+    fprintf(['location ',num2str(loccounter), ' dir ',num2str(dircounter),' ']);
+    M.apertureLoc = allApertureLoc(loccounter,:);
     
+    % get simple motion responses
+    fprintf(['simple',' ']);
+    M.motiontype = 'simple';
+    save('./StimulusParam.mat','M');
+    
+    [Stimulus] = generateStimulus();
+    MotionField = estimateMotionField(Stimulus); 
+    
+    Xr = reshape(log(MotionField.averageMotionInsideAmp/10),1,size(MotionField.averageMotionInsideAmp,1)*size(MotionField.averageMotionInsideAmp,2));
+    Xt = reshape(MotionField.averageMotionInsideAngle,1,size(MotionField.averageMotionInsideAngle,1)*size(MotionField.averageMotionInsideAngle,2));
+    maxspeed = single(max(Xr(:)));
+    [MT, MTparams] = MTbank(Xt,Xr,maxspeed);
+    MT = squeeze(MT);
+    numMT = size(MT,1)*size(MT,2)*size(MT,3);
+    newMST = false;
+    [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
+    numMST = size(MST,1)*size(MST,2);
+    allMST = reshape(MST,size(MST,1)*size(MST,2),1);
+    allMT= reshape(MT,size(MT,1)*size(MT,2)*size(MT,3),1);
+    if readoutNeuronIdx > numMT
+        readoutNeuronResp_simple(dircounter,loccounter) = allMST(readoutNeuronIdx-numMT);
+    else
+        readoutNeuronResp_simple(dircounter,loccounter) = allMT(readoutNeuronIdx);
+    end
+    
+    % get complex motion responses
+    fprintf(['complex','\n']);
+    M.motiontype = 'complex';
+    save('./StimulusParam.mat','M');
+    [Stimulus] = generateStimulus();
+    MotionField = estimateMotionField(Stimulus); 
+    
+    Xr = reshape(log(MotionField.averageMotionInsideAmp/10),1,size(MotionField.averageMotionInsideAmp,1)*size(MotionField.averageMotionInsideAmp,2));
+    Xt = reshape(MotionField.averageMotionInsideAngle,1,size(MotionField.averageMotionInsideAngle,1)*size(MotionField.averageMotionInsideAngle,2));
+    maxspeed = single(max(Xr(:)));
+    [MT, MTparams] = MTbank(Xt,Xr,maxspeed);
+    MT = squeeze(MT);
+    numMT = size(MT,1)*size(MT,2)*size(MT,3);
+    newMST = false;
+    [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
+    numMST = size(MST,1)*size(MST,2);
+    allMST = reshape(MST,size(MST,1)*size(MST,2),1);
+    allMT= reshape(MT,size(MT,1)*size(MT,2)*size(MT,3),1);
+    if readoutNeuronIdx > numMT
+        readoutNeuronResp_complex(dircounter,loccounter) = allMST(readoutNeuronIdx-numMT);
+    else
+        readoutNeuronResp_complex(dircounter,loccounter) = allMT(readoutNeuronIdx);
+    end
+
+
+%     close;
+end
+end
+
+figure;title('response to complex rdk')
+thisResp = readoutNeuronResp_complex(:,:);
+baseline = 0;%min(thisResp(:));
+themax = max(thisResp(:));
+rg = [baseline-(themax-baseline),themax];
+for i = 1:9
+    subplot(3,3,i);colormap(jet);polarmosaic(squeeze(thisResp(:,i)),rg,.35,1);box off;
+end
+
+figure;title('response to simple rdk')
+thisResp = readoutNeuronResp_simple(:,:);
+for i = 1:9
+    subplot(3,3,i);colormap(jet);polarmosaic(squeeze(thisResp(:,i)),rg,.35,1);box off;
+end
+
+%% dprime of the readout neurons at different locations
+
+load ./StimulusParam.mat;
+dircounter = 0;
+
+allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];
+DIR1 = pi;
+DIR2 = 0;
+for loccounter = 1:9
+    fprintf(['location ',num2str(loccounter),' ']);
+    for trcounter = 1:20
+        fprintf(['.']);
+        
+        
+        M.direction = DIR1;
+        M.apertureLoc = allApertureLoc(loccounter,:);
+        M.motiontype = 'simple';
+        save('./StimulusParam.mat','M');
+        
+        [Stimulus] = generateStimulus();
+        MotionField = estimateMotionField(Stimulus);
+        
+        Xr = reshape(log(MotionField.averageMotionInsideAmp/10),1,size(MotionField.averageMotionInsideAmp,1)*size(MotionField.averageMotionInsideAmp,2));
+        Xt = reshape(MotionField.averageMotionInsideAngle,1,size(MotionField.averageMotionInsideAngle,1)*size(MotionField.averageMotionInsideAngle,2));
+        maxspeed = single(max(Xr(:)));
+        [MT, MTparams] = MTbank(Xt,Xr,maxspeed);
+        MT = squeeze(MT);
+        numMT = size(MT,1)*size(MT,2)*size(MT,3);
+        newMST = false;
+        [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
+        numMST = size(MST,1)*size(MST,2);
+        allMST = reshape(MST,size(MST,1)*size(MST,2),1);
+        allMT= reshape(MT,size(MT,1)*size(MT,2)*size(MT,3),1);
+        if readoutNeuronIdx > numMT
+            readoutNeuronResp(loccounter,1,trcounter) = allMST(readoutNeuronIdx-numMT);
+        else
+            readoutNeuronResp(loccounter,1,trcounter) = allMT(readoutNeuronIdx);
+        end
+        
+        M.direction = DIR2;
+        M.apertureLoc = allApertureLoc(loccounter,:);
+        M.motiontype = 'simple';
+        save('./StimulusParam.mat','M');
+        
+        [Stimulus] = generateStimulus();
+        MotionField = estimateMotionField(Stimulus);
+        
+        Xr = reshape(log(MotionField.averageMotionInsideAmp/10),1,size(MotionField.averageMotionInsideAmp,1)*size(MotionField.averageMotionInsideAmp,2));
+        Xt = reshape(MotionField.averageMotionInsideAngle,1,size(MotionField.averageMotionInsideAngle,1)*size(MotionField.averageMotionInsideAngle,2));
+        maxspeed = single(max(Xr(:)));
+        [MT, MTparams] = MTbank(Xt,Xr,maxspeed);
+        MT = squeeze(MT);
+        numMT = size(MT,1)*size(MT,2)*size(MT,3);
+        newMST = false;
+        [MST, MSTparams] = MSTbank3(MT, MTparams,newMST);
+        numMST = size(MST,1)*size(MST,2);
+        allMST = reshape(MST,size(MST,1)*size(MST,2),1);
+        allMT= reshape(MT,size(MT,1)*size(MT,2)*size(MT,3),1);
+        if readoutNeuronIdx > numMT
+            readoutNeuronResp(loccounter,2,trcounter) = allMST(readoutNeuronIdx-numMT);
+        else
+            readoutNeuronResp(loccounter,2,trcounter) = allMT(readoutNeuronIdx);
+        end
+        
+        
+    end
+    fprintf('\n')
+end
+epcilon = 0.2;
+readoutNeuronResp_normal = (readoutNeuronResp - mean(readoutNeuronResp(:)))./std(readoutNeuronResp(:));
+readoutNeuronResp_noisy = readoutNeuronResp_normal + epcilon*randn(size(readoutNeuronResp_normal));
+mean1 = mean(readoutNeuronResp_noisy(:,1,:),3);
+mean2 = mean(readoutNeuronResp_noisy(:,2,:),3);
+var1 = var(readoutNeuronResp_noisy(:,1,:),[],3);
+var2 = var(readoutNeuronResp_noisy(:,2,:),[],3);
+
+dprime_everywhere = abs(mean1 - mean2)./sqrt(0.5 * (var1 + var2));
+figure;imagesc(reshape(dprime_everywhere,3,3));
