@@ -150,10 +150,10 @@ toc
 
 %% adaptive decoding
 
-load ./simulated' data'/data12
+load ./simulated' data'/data14
 allMT_normal = (allMT - mean(allMT(:)))./(std(allMT(:)));
 allMST_normal = (allMST - mean(allMST(:)))./(std(allMST(:)));
-epcilon = 0.2;
+epcilon = 0.1;
 allMT_noisy = allMT_normal + epcilon*randn(size(allMT_normal));
 allMST_noisy = allMST_normal + epcilon*randn(size(allMST_normal));
 numReadoutNeurons = 2;
@@ -180,8 +180,8 @@ subplot(2,1,2);plot(resample(double(max(dprimes,[],1)),1,10),'o-')
 %% tuning of the readout neuron
 load ./StimulusParam.mat;
 dircounter = 0;
-
-allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
+allApertureLoc = [100 100; 200 100; 300 100; 100 200; 200 200; 300 300; 100 300; 200 300; 300 300];
+% allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
 for dir = 0:pi/4:(2*pi - pi/4)
     dircounter = dircounter + 1;
     M.direction = dir;
@@ -256,6 +256,9 @@ end
 
 figure;title('response to simple rdk')
 thisResp = readoutNeuronResp_simple(:,:);
+baseline = 0;%min(thisResp(:));
+themax = max(thisResp(:));
+rg = [baseline-(themax-baseline),themax];
 for i = 1:9
     subplot(3,3,i);colormap(jet);polarmosaic(squeeze(thisResp(:,i)),rg,.35,1);box off;
 end
@@ -268,6 +271,7 @@ allApertureLoc = [100 100; 200 100; 300 100; 100 200; 200 200; 300 300; 100 300;
 % allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];
 DIR1 = pi;
 DIR2 = 0;
+tic;
 for loccounter = 1:9
     fprintf(['location ',num2str(loccounter),' ']);
     for trcounter = 1:20
@@ -333,7 +337,8 @@ for loccounter = 1:9
     end
     fprintf('\n')
 end
-epcilon = 0.2;
+toc;
+epcilon = 0.1;
 readoutNeuronResp_normal = (readoutNeuronResp - mean(readoutNeuronResp(:)))./std(readoutNeuronResp(:));
 readoutNeuronResp_noisy = readoutNeuronResp_normal + epcilon*randn(size(readoutNeuronResp_normal));
 mean1 = mean(readoutNeuronResp_noisy(:,1,:),3);

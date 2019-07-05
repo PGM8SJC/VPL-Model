@@ -22,7 +22,7 @@ whichIdx = randperm(numIdx,subsamples);
 whichNeuronsIdx = neuronsIdx(whichIdx);
 
 
-for trcount = 1:10000
+for trcount = 1:1000
     if trcount == 1
         selectedNeuronsIdx(:,trcount) = whichNeuronsIdx;
     else
