@@ -100,8 +100,8 @@ toc;
 tic;
 load ./StimulusParam.mat;
 numTrials = 100;
-DIR1 = pi;
-DIR2 = 0;
+DIR1 = pi/2;
+DIR2 = 3*pi/2;
 allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
 for trcounter = 1:numTrials/2
     fprintf(['trial ',num2str(trcounter),'\n']);
@@ -150,10 +150,10 @@ toc
 
 %% adaptive decoding
 
-load ./simulated' data'/data14
+% load ./simulated' data'/data32
 allMT_normal = (allMT - mean(allMT(:)))./(std(allMT(:)));
 allMST_normal = (allMST - mean(allMST(:)))./(std(allMST(:)));
-epcilon = 0.1;
+epcilon = 0.2;
 allMT_noisy = allMT_normal + epcilon*randn(size(allMT_normal));
 allMST_noisy = allMST_normal + epcilon*randn(size(allMST_normal));
 numReadoutNeurons = 2;
@@ -180,14 +180,15 @@ subplot(2,1,2);plot(resample(double(max(dprimes,[],1)),1,10),'o-')
 %% tuning of the readout neuron
 load ./StimulusParam.mat;
 dircounter = 0;
-allApertureLoc = [100 100; 200 100; 300 100; 100 200; 200 200; 300 300; 100 300; 200 300; 300 300];
-% allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
+% allApertureLoc = [100 100; 200 100; 300 100; 100 200; 200 200; 300 300; 100 300; 200 300; 300 300];
+allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];  
 for dir = 0:pi/4:(2*pi - pi/4)
     dircounter = dircounter + 1;
     M.direction = dir;
 for loccounter = 1:9
     
 
+    
     fprintf(['location ',num2str(loccounter), ' dir ',num2str(dircounter),' ']);
     M.apertureLoc = allApertureLoc(loccounter,:);
     
@@ -256,8 +257,8 @@ end
 
 figure;title('response to simple rdk')
 thisResp = readoutNeuronResp_simple(:,:);
-baseline = 0;%min(thisResp(:));
-themax = max(thisResp(:));
+% baseline = 0;%min(thisResp(:));
+% themax = max(thisResp(:));
 rg = [baseline-(themax-baseline),themax];
 for i = 1:9
     subplot(3,3,i);colormap(jet);polarmosaic(squeeze(thisResp(:,i)),rg,.35,1);box off;
@@ -267,20 +268,20 @@ end
 
 load ./StimulusParam.mat;
 dircounter = 0;
-allApertureLoc = [100 100; 200 100; 300 100; 100 200; 200 200; 300 300; 100 300; 200 300; 300 300];
-% allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];
-DIR1 = pi;
-DIR2 = 0;
+% allApertureLoc = [100 100; 200 100; 300 100; 100 200; 200 200; 300 300; 100 300; 200 300; 300 300];
+allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];
+DIR1 = pi/2;
+DIR2 = 3*pi/2;
 tic;
 for loccounter = 1:9
     fprintf(['location ',num2str(loccounter),' ']);
     for trcounter = 1:20
         
-        [dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,numReadoutNeurons);
-        [dmax,id] = max(dprimes(:,end));
-        readoutNeuronIdx = selectedNeuronsIdx(id,end);
-        
-        fprintf(['.']);
+%         [dprimes,selectedNeuronsIdx] = adaptiveDecoder(allMT_noisy,allMST_noisy,numReadoutNeurons);
+%         [dmax,id] = max(dprimes(:,end));
+%         readoutNeuronIdx = selectedNeuronsIdx(id,end);
+%         
+        fprintf(['.']); 
         
         
         M.direction = DIR1;
@@ -338,7 +339,7 @@ for loccounter = 1:9
     fprintf('\n')
 end
 toc;
-epcilon = 0.1;
+epcilon = 0.15;
 readoutNeuronResp_normal = (readoutNeuronResp - mean(readoutNeuronResp(:)))./std(readoutNeuronResp(:));
 readoutNeuronResp_noisy = readoutNeuronResp_normal + epcilon*randn(size(readoutNeuronResp_normal));
 mean1 = mean(readoutNeuronResp_noisy(:,1,:),3);
@@ -347,4 +348,13 @@ var1 = var(readoutNeuronResp_noisy(:,1,:),[],3);
 var2 = var(readoutNeuronResp_noisy(:,2,:),[],3);
 
 dprime_everywhere = abs(mean1 - mean2)./sqrt(0.5 * (var1 + var2));
-figure;imagesc(reshape(dprime_everywhere,3,3));
+figure;imagesc(reshape(log(dprime_everywhere),3,3));
+
+%% difference of the two training conditions
+diff = reshape(log(dprime_everywhere_postcomplex) - log(dprime_everywhere_postsimple),3,3);
+figure;plot(0,diff(1,1),'o');hold on
+plot(1,(diff(2,1)+diff(1,2))./2,'ok');
+plot(2,(diff(1,3)+diff(3,1))./2,'ok');
+plot(3,(diff(3,2)+diff(2,3))./2,'ok');
+plot(4,diff(3,3),'ok');
+

@@ -20,7 +20,7 @@ function [X, params] = MTbank(Xt,Xr,maxspeed)
     %bwtheta = 2.5;
    bwtheta = 1;%single([.4,.72,2]);
    bwspeed = 1;%single([0.5,1,2,4]);
-   sigmas = 10;%2;%2;%single([0.1, 0.5, 1, 2]);
+   sigmas = 8;%10;%2;%2;%single([0.1, 0.5, 1, 2]);
     
     [xi yi] = meshgrid(1:w,1:w);
     
