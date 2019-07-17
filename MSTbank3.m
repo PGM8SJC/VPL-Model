@@ -25,7 +25,7 @@ Speeds = unique(MTparams.speeds);
 numSpeeds = length(Speeds);
 
 % MST bank parameters
-spatialSigma = 7;%11;%2;
+spatialSigma = 5;%11;%2;
 numMSTUnitsPerPos = 20;%40;
 numMTsubUnitsPerMSTUnit = 5;%
 kernelW = 5;%11;

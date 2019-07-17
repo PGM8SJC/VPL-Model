@@ -1,6 +1,6 @@
 %% measure decoding and spatial transfer repeately
 
-numtrial = 20;
+numtrial = 10;
 % allApertureLoc = [100 100; 200 100; 300 100; 100 200; 200 200; 300 300; 100 300; 200 300; 300 300];
 allApertureLoc = [100 100; 300 100; 500 100; 100 300; 300 300; 500 300; 100 500; 300 500; 500 500];
 DIR1 = pi/2;
@@ -9,7 +9,7 @@ tic;
 for tr = 1:numtrial
     fprintf(['Trial #',num2str(tr),'\n']);
     % adaptive decoding
-    load ./simulated' data'/data32
+    load ./simulated' data'/data37
     allMT_normal = (allMT - mean(allMT(:)))./(std(allMT(:)));
     allMST_normal = (allMST - mean(allMST(:)))./(std(allMST(:)));
     epcilon = 0.2;
@@ -84,7 +84,7 @@ for tr = 1:numtrial
             
             
         end
-        fprintf('\n')
+        fprintf('.\n')
     end
     
     epcilon = 0.2;
